@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html idioma="es" clase="oscuro">
+<cabeza>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlorDiaria</title>
+  <link rel="manifest" href="data:application/manifest+json,{
+    %22name%22:%22FlorDiaria%22,
+    %22short_name%22:%22FlorDiaria%22,
+    %22start_url%22:%22.%22,
+    %22display%22:%22standalone%22,
+    %22background_color%22:%22%23121212%22,
+    %22theme_color%22:%22%23121212%22,
+    %22icons%22:[{%22src%22:%22data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌸</text></svg>%22,%22sizes%22:%22192x192%22,%22type%22:%22image/svg+xml%22}]
+  }">
+  <style>
+    :root {
+      --bg: #121212;
+      --card-bg: #1e1e1e;
+      --text: #ffffff;
+      --accent: #ff6b8b;
+    }
+    body {
+      margin: 0;
+      padding: 20px;
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      box-sizing: border-box;
+      text-align: center;
+    }
+    .card {
+      background: var(--card-bg);
+      padding: 30px;
+      border-radius: 20px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      max-width: 400px;
+      width: 100%;
+    }
+    .flower {
+      font-size: 80px;
+      margin: 20px 0;
+      animation: pulse 2s infinite ease-in-out;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    h1 {
+      margin: 0 0 10px 0;
+      font-size: 24px;
+      color: var(--accent);
+    }
+    p {
+      font-size: 16px;
+      line-height: 1.5;
+      opacity: 0.9;
+    }
+  </style>
+</cabeza>
+<body>
+  <div class="card">
+    <h1>FlorDiaria</h1>
+    <div class="flower">🌸</div>
+    <p>¡Tu aplicación está lista y funcionando correctamente!</p>
+  </div>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('data:text/javascript,console.log("SW cargado");');
+    }
+  </script>
+</body>
+</html>
