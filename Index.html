@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlorDiaria - Tu Flor del Día & Envíos Florales</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            botanical: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              700: '#15803d',
+              800: '#166534',
+              900: '#14532d',
+              950: '#052e16',
+            },
+            rose: {
+              400: '#fb7185',
+              500: '#f43f5e',
+              600: '#e11d48',
+            }
+          },
+          fontFamily: {
+            serif: ['"Playfair Display"', 'serif'],
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;0,900;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #09120c;
+      color: #f1f5f9;
+      overflow-x: hidden;
+    }
+
+    .font-serif-title {
+      font-family: 'Playfair Display', serif;
+    }
+
+    /* Glassmorphism Design */
+    .glass-panel {
+      background: rgba(18, 34, 24, 0.75);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .glass-card {
+      background: rgba(25, 46, 32, 0.5);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    /* Floating Canvas */
+    #petalsCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 18, 0.8);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(34, 197, 94, 0.4);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(34, 197, 94, 0.7);
+    }
+
+    /* Flower Pulse Glow */
+    .glow-flower {
+      filter: drop-shadow(0 0 25px rgba(244, 63, 94, 0.35));
+    }
+
+    /* Envelope animation */
+    .envelope-shadow {
+      box-shadow: 0 20px 40px -15px rgba(0,0,0,0.5);
+    }
+  </style>
+</head>
+<body class="relative min-h-screen flex flex-col justify-between selection:bg-rose-500 selection:text-white">
+
+  <!-- Background Particle Floating Petals -->
+  <canvas id="petalsCanvas"></canvas>
+
+  <!-- Navigation Header -->
+  <header class="relative z-20 w-full max-w-6xl mx-auto px-4 py-5 flex justify-between items-center">
+    <div class="flex items-center gap-3 cursor-pointer" onclick="switchTab('daily')">
+      <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-emerald-600 via-teal-500 to-rose-400 p-0.5 shadow-lg shadow-emerald-900/40">
+        <div class="w-full h-full bg-botanical-950 rounded-[14px] flex items-center justify-center text-2xl">
+          🌸
+        </div>
+      </div>
+      <div>
+        <h1 class="text-xl font-bold font-serif-title tracking-wide bg-gradient-to-r from-emerald-200 via-rose-200 to-amber-200 bg-clip-text text-transparent">
+          FlorDiaria
+        </h1>
+        <p class="text-[11px] text-emerald-400/80 font-medium tracking-wider uppercase">Un Regalo Floral Cada Día</p>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="glass-panel p-1.5 rounded-2xl flex items-center gap-1 shadow-2xl border border-emerald-500/10">
+      <button id="navDaily" onclick="switchTab('daily')" class="px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-2 bg-emerald-600 text-white shadow-md shadow-emerald-900/50">
+        <span>✨</span> <span class="hidden sm:inline">Flor del Día</span>
+      </button>
+      <button id="navSend" onclick="switchTab('send')" class="px-4 py-2 rounded-xl text-xs font-semibold text-emerald-200/80 hover:text-white hover:bg-white/5 transition-all duration-300 flex items-center gap-2">
+        <span>💌</span> <span class="hidden sm:inline">Enviar una Flor</span>
+      </button>
+      <button id="navCatalog" onclick="switchTab('catalog')" class="px-4 py-2 rounded-xl text-xs font-semibold text-emerald-200/80 hover:text-white hover:bg-white/5 transition-all duration-300 flex items-center gap-2">
+        <span>📚</span> <span class="hidden sm:inline">Floridex</span>
+      </button>
+      <button id="navGarden" onclick="switchTab('garden')" class="px-4 py-2 rounded-xl text-xs font-semibold text-emerald-200/80 hover:text-white hover:bg-white/5 transition-all duration-300 flex items-center gap-2">
+        <span>🏡</span> <span class="hidden sm:inline">Jardín Virtual</span>
+      </button>
+    </nav>
+
+    <!-- Audio & Ambient Toggle -->
+    <div class="flex items-center gap-2">
+      <button id="audioBtn" onclick="toggleAmbientAudio()" class="glass-panel p-2.5 rounded-xl text-emerald-300 hover:text-white hover:border-emerald-500/40 transition-all text-xs flex items-center gap-1.5" title="Sonidos Ambientales de Naturaleza">
+        <span id="audioStatusIcon">🎵</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Content View Container -->
+  <main class="relative z-10 flex-1 max-w-6xl w-full mx-auto px-4 py-4 flex flex-col justify-center">
+
+    <!-- TAB 1: FLOR DEL DÍA -->
+    <section id="tabDaily" class="block space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-4 glass-card p-4 rounded-2xl border-emerald-500/20">
+        <div class="flex items-center gap-3">
+          <div class="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-medium font-mono" id="currentDateDisplay">
+            Cargando fecha...
+          </div>
+          <span class="text-xs text-slate-400 hidden md:inline">| Cada 24 horas florece un nuevo regalo botánico</span>
+        </div>
+
+        <div class="flex items-center gap-4 text-xs">
+          <div class="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-300 px-3 py-1.5 rounded-xl font-medium">
+            <span>🔥</span> Racha: <span id="streakCounter" class="font-bold font-mono">1</span> días
+          </div>
+          <button onclick="pickRandomFlower()" class="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-emerald-500/20 border border-white/10 hover:border-emerald-500/30 text-emerald-200 transition-all font-medium text-xs flex items-center gap-1.5">
+            🎲 Sorpréndeme
+          </button>
+        </div>
+      </div>
+
+      <!-- Hero Daily Flower Card -->
+      <div class="glass-panel rounded-3xl p-6 md:p-10 border border-emerald-500/20 shadow-2xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative overflow-hidden">
+        <div class="absolute -top-24 -right-24 w-80 h-80 rounded-full bg-rose-500/10 blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-24 -left-24 w-80 h-80 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none"></div>
+
+        <div class="lg:col-span-5 flex flex-col items-center justify-center text-center space-y-4">
+          <div id="flowerArtContainer" class="relative w-64 h-64 md:w-80 md:h-80 rounded-full bg-gradient-to-b from-emerald-950/60 to-botanical-900/80 border border-emerald-500/30 flex items-center justify-center p-6 shadow-2xl group transition-all duration-500 hover:scale-105">
+            <div id="flowerSvgDisplay" class="w-full h-full flex items-center justify-center glow-flower transition-all duration-700"></div>
+            <span class="absolute bottom-4 bg-slate-900/90 text-rose-300 text-[11px] font-semibold tracking-wider px-3 py-1 rounded-full border border-rose-500/30 shadow-lg uppercase" id="flowerCategoryBadge">
+              Simbolismo
+            </span>
+          </div>
+          <p class="text-xs text-emerald-300/70 italic font-serif-title" id="flowerScientificName">Name</p>
+        </div>
+
+        <div class="lg:col-span-7 space-y-5">
+          <div>
+            <div class="flex items-center gap-2 mb-1">
+              <span class="w-2 h-2 rounded-full bg-rose-400 animate-ping"></span>
+              <span class="text-xs uppercase font-bold tracking-widest text-rose-400">Flor del Día</span>
+            </div>
+            <h2 class="text-3xl md:text-5xl font-extrabold font-serif-title text-white tracking-tight" id="flowerName">Flor</h2>
+          </div>
+
+          <div class="glass-card p-4 rounded-2xl border-l-4 border-l-rose-500 border-white/5 space-y-1">
+            <span class="text-[10px] text-emerald-400 uppercase tracking-widest font-bold">Significado en el Lenguaje de las Flores</span>
+            <p class="text-sm md:text-base font-serif-title italic text-rose-100" id="flowerMeaning">"El significado de la flor..."</p>
+          </div>
+
+          <p class="text-xs md:text-sm text-slate-300 leading-relaxed" id="flowerDescription">Descripción de la flor del día...</p>
+
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
+            <div class="glass-card p-3 rounded-xl border border-white/5">
+              <span class="block text-slate-400 text-[10px] uppercase font-bold">Origen Principal</span>
+              <span class="font-bold text-emerald-300" id="flowerOrigin">Mediterráneo</span>
+            </div>
+            <div class="glass-card p-3 rounded-xl border border-white/5">
+              <span class="block text-slate-400 text-[10px] uppercase font-bold">Estación Ideal</span>
+              <span class="font-bold text-amber-300" id="flowerSeason">Primavera</span>
+            </div>
+            <div class="glass-card p-3 rounded-xl border border-white/5 col-span-2 md:col-span-1">
+              <span class="block text-slate-400 text-[10px] uppercase font-bold">Emoción Clave</span>
+              <span class="font-bold text-rose-300" id="flowerEmotion">Amor Verdadero</span>
+            </div>
+          </div>
+
+          <div class="bg-emerald-950/40 p-3.5 rounded-xl border border-emerald-500/20 text-xs text-emerald-200 flex items-start gap-2.5">
+            <span class="text-lg">🌱</span>
+            <div>
+              <strong class="font-bold text-emerald-300">Consejo de Botánica:</strong>
+              <span id="flowerCareTip" class="text-slate-300">Instrucciones de cuidado...</span>
+            </div>
+          </div>
+
+          <div class="pt-2 flex flex-wrap gap-3">
+            <button onclick="prepareCardWithFlower()" class="flex-1 min-w-[200px] py-3 px-6 rounded-2xl bg-gradient-to-r from-rose-600 via-pink-600 to-emerald-600 hover:from-rose-500 hover:to-emerald-500 text-white font-bold text-xs shadow-xl shadow-rose-950/50 transition-all transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
+              <span>💌</span> Regalar esta Flor a Alguien
+            </button>
+            <button onclick="addToGardenCurrent()" class="py-3 px-5 rounded-2xl bg-white/5 hover:bg-emerald-500/20 border border-white/10 hover:border-emerald-500/30 text-white font-semibold text-xs transition-all flex items-center gap-2">
+              <span>🏡</span> Plantar en mi Jardín
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: ENVIAR UNA FLOR A UNA PERSONA -->
+    <section id="tabSend" class="hidden space-y-6">
+      <div class="text-center max-w-2xl mx-auto space-y-2">
+        <h2 class="text-2xl md:text-4xl font-extrabold font-serif-title text-white">
+          Envía una Carta Floral Personalizada
+        </h2>
+        <p class="text-xs md:text-sm text-emerald-300/80">
+          Selecciona una flor, escribe un mensaje con sentimiento y comparte una tarjeta digital animada con esa persona especial.
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        <div class="lg:col-span-5 glass-panel p-6 rounded-3xl border border-emerald-500/20 space-y-4">
+          <h3 class="text-sm font-bold uppercase tracking-wider text-rose-300 flex items-center gap-2 border-b border-white/10 pb-3">
+            <span>✏️</span> Personaliza el Detalle
+          </h3>
+
+          <div>
+            <label class="block text-xs text-slate-300 font-semibold mb-1">¿Para quién es la flor?</label>
+            <input type="text" id="cardRecipient" placeholder="Ej. Camila, Mamá, Sofía..." class="w-full bg-slate-900/80 border border-emerald-500/30 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-rose-400 transition-all" oninput="updateCardPreview()">
+          </div>
+
+          <div>
+            <label class="block text-xs text-slate-300 font-semibold mb-1">De parte de (tu nombre):</label>
+            <input type="text" id="cardSender" placeholder="Ej. Mateo, Tu admirador..." class="w-full bg-slate-900/80 border border-emerald-500/30 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-rose-400 transition-all" oninput="updateCardPreview()">
+          </div>
+
+          <div>
+            <label class="block text-xs text-slate-300 font-semibold mb-1">Selecciona la flor:</label>
+            <select id="cardFlowerSelect" class="w-full bg-slate-900 border border-emerald-500/30 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-rose-400 transition-all" onchange="updateCardPreview()"></select>
+          </div>
+
+          <div>
+            <label class="block text-xs text-slate-300 font-semibold mb-1">Ocasión especial:</label>
+            <div class="grid grid-cols-3 gap-1.5">
+              <button onclick="setOccasionTemplate('amor')" class="py-1.5 px-2 rounded-lg bg-white/5 hover:bg-rose-500/20 text-[11px] border border-white/5 text-rose-200">❤️ Amor</button>
+              <button onclick="setOccasionTemplate('amistad')" class="py-1.5 px-2 rounded-lg bg-white/5 hover:bg-amber-500/20 text-[11px] border border-white/5 text-amber-200">⭐ Amistad</button>
+              <button onclick="setOccasionTemplate('agradecimiento')" class="py-1.5 px-2 rounded-lg bg-white/5 hover:bg-emerald-500/20 text-[11px] border border-white/5 text-emerald-200">🌿 Gratitud</button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs text-slate-300 font-semibold mb-1">Mensaje dedicatoria:</label>
+            <textarea id="cardMessage" rows="4" placeholder="Escribe un lindo mensaje lleno de significado..." class="w-full bg-slate-900/80 border border-emerald-500/30 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-rose-400 transition-all" oninput="updateCardPreview()"></textarea>
+          </div>
+
+          <div>
+            <label class="block text-xs text-slate-300 font-semibold mb-2">Tema de sobre:</label>
+            <div class="flex gap-3">
+              <button onclick="setCardTheme('rose')" class="w-8 h-8 rounded-full bg-gradient-to-r from-rose-500 to-pink-600 border-2 border-white/40 focus:scale-110 transition-all"></button>
+              <button onclick="setCardTheme('emerald')" class="w-8 h-8 rounded-full bg-gradient-to-r from-emerald-600 to-teal-600 border-2 border-white/40 focus:scale-110 transition-all"></button>
+              <button onclick="setCardTheme('amber')" class="w-8 h-8 rounded-full bg-gradient-to-r from-amber-500 to-orange-600 border-2 border-white/40 focus:scale-110 transition-all"></button>
+              <button onclick="setCardTheme('indigo')" class="w-8 h-8 rounded-full bg-gradient-to-r from-indigo-600 to-purple-600 border-2 border-white/40 focus:scale-110 transition-all"></button>
+            </div>
+          </div>
+        </div>
+
+        <div class="lg:col-span-7 flex flex-col items-center justify-between space-y-4">
+          <div class="w-full text-center">
+            <span class="text-xs uppercase tracking-widest font-bold text-emerald-400">Vista Previa Interactiva</span>
+            <p class="text-[11px] text-slate-400">Haz clic en la tarjeta para interactuar con ella</p>
+          </div>
+
+          <div id="interactiveCardPreview" class="w-full max-w-md cursor-pointer transition-all duration-500 transform hover:scale-[1.02] envelope-shadow relative">
+            <div id="cardInnerFrame" class="glass-panel p-8 rounded-3xl border-2 border-rose-500/40 relative overflow-hidden text-center space-y-4 min-h-[420px] flex flex-col justify-between items-center bg-gradient-to-b from-slate-900/90 via-botanical-950/90 to-slate-950/95">
+              <div class="w-full flex justify-between items-center text-[10px] font-mono text-emerald-300/70 border-b border-white/10 pb-2">
+                <span>FLORDIARIA • REGALO</span>
+                <span id="previewOccasionBadge">❤️ DEDICATORIA</span>
+              </div>
+
+              <div id="previewFlowerSvg" class="w-36 h-36 mx-auto glow-flower my-2"></div>
+
+              <div class="space-y-2 w-full">
+                <h4 class="text-lg font-bold font-serif-title text-rose-200" id="previewRecipientText">Para: Alguien Especial</h4>
+                <p class="text-xs text-slate-200 font-serif-title italic leading-relaxed px-4 min-h-[60px]" id="previewMessageText">
+                  "Que la belleza de esta flor alegre tu día y te recuerde lo especial que eres."
+                </p>
+                <div class="text-right text-xs font-bold text-emerald-300 font-serif-title pr-4" id="previewSenderText">Con cariño, Tu Amigo</div>
+              </div>
+
+              <div class="w-full pt-3 border-t border-white/10 text-[10px] text-rose-300/90 italic font-serif-title" id="previewFlowerSymbolism">
+                Flor: Rosa - Significado: Amor Eterno y Pasión
+              </div>
+            </div>
+          </div>
+
+          <div class="w-full max-w-md grid grid-cols-2 gap-3 pt-2">
+            <button onclick="shareViaWhatsApp()" class="py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-2">
+              <span>💬</span> Enviar por WhatsApp
+            </button>
+            <button onclick="copyCardLink()" class="py-3 px-4 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-lg transition-all flex items-center justify-center gap-2">
+              <span>📋</span> Copiar Carta
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: FLORIDEX (CATÁLOGO FLORAL) -->
+    <section id="tabCatalog" class="hidden space-y-6">
+      <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h2 class="text-2xl font-extrabold font-serif-title text-white">Floridex Botánica</h2>
+          <p class="text-xs text-emerald-300/80">Explora la enciclopedia del lenguaje secreto de las flores.</p>
+        </div>
+        <div class="w-full md:w-auto flex gap-2">
+          <input type="text" id="catalogSearch" placeholder="Buscar por flor o emoción..." oninput="renderCatalog()" class="bg-slate-900 border border-emerald-500/30 rounded-xl px-4 py-2 text-xs text-white focus:outline-none focus:border-rose-400 w-full md:w-64">
+        </div>
+      </div>
+
+      <div id="catalogGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    </section>
+
+    <!-- TAB 4: JARDÍN VIRTUAL -->
+    <section id="tabGarden" class="hidden space-y-6">
+      <div class="glass-panel p-6 rounded-3xl border border-emerald-500/20 text-center space-y-3">
+        <h2 class="text-2xl font-bold font-serif-title text-white">Tu Jardín Botánico Personal</h2>
+        <p class="text-xs text-emerald-300/80 max-w-lg mx-auto">
+          Aquí guardas cada flor que cosechas diariamente o te regalan. Mantén tu racha diaria para desbloquear nuevas variaciones.
+        </p>
+      </div>
+
+      <div id="gardenGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="relative z-10 border-t border-white/5 py-6 text-center text-slate-500 text-xs">
+    <p>FlorDiaria &copy; 2026 — Un espacio botánico para reconectar con la naturaleza.</p>
+  </footer>
+
+  <!-- SCRIPT LÓGICA DE APLICACIÓN -->
+  <script>
+    // Base de datos Botánica con arte SVG integrado
+    const flowersDatabase = [
+      {
+        id: 'rosa',
+        name: 'Rosa Roja',
+        scientificName: 'Rosa rubiginosa',
+        meaning: 'Amor apasionado, respeto profundo y coraje puro.',
+        description: 'Icono indiscutible de la poesía y el afecto humano a través de los siglos.',
+        origin: 'Persia y Asia Oriental',
+        season: 'Primavera - Verano',
+        emotion: 'Pasión',
+        careTip: 'Corta sus tallos en diagonal cada 2 días y mantén el agua fresca.',
+        category: 'Romance',
+        svg: `<svg viewBox="0 0 100 100" class="w-full h-full">
+                <path d="M50 85 Q50 60 50 45" stroke="#22c55e" stroke-width="4" fill="none"/>
+                <path d="M50 65 Q35 60 30 50 Q45 55 50 65" fill="#15803d"/>
+                <circle cx="50" cy="35" r="22" fill="#e11d48"/>
+                <circle cx="45" cy="30" r="15" fill="#f43f5e"/>
+                <circle cx="50" cy="28" r="8" fill="#fb7185"/>
+              </svg>`
+      },
+      {
+        id: 'girasol',
+        name: 'Girasol',
+        scientificName: 'Helianthus annuus',
+        meaning: 'Adoración, lealtad y felicidad radiante que busca la luz.',
+        description: 'Conocido por su heliotropismo, girando siempre buscando los rayos del sol.',
+        origin: 'Norteamérica',
+        season: 'Verano',
+        emotion: 'Alegría',
+        careTip: 'Requieren jarrones altos y abundante luz solar directa.',
+        category: 'Energía',
+        svg: `<svg viewBox="0 0 100 100" class="w-full h-full">
+                <path d="M50 85 L50 45" stroke="#15803d" stroke-width="4"/>
+                <g fill="#eab308">
+                  ${[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map(deg => 
+                    `<ellipse cx="50" cy="20" rx="4" ry="14" transform="rotate(${deg} 50 35)" />`
+                  ).join('')}
+                </g>
+                <circle cx="50" cy="35" r="12" fill="#78350f"/>
+              </svg>`
+      },
+      {
+        id: 'orquidea',
+        name: 'Orquídea',
+        scientificName: 'Orchidaceae',
+        meaning: 'Belleza refinada, fuerza misteriosa y elegancia superior.',
+        description: 'Una de las familias de plantas más evolucionadas y exóticas del planeta.',
+        origin: 'Selvas Tropicales',
+        season: 'Todo el año',
+        emotion: 'Admiración',
+        careTip: 'Riega solo cuando sus raíces superficiales se tornen grisáceas.',
+        category: 'Elegancia',
+        svg: `<svg viewBox="0 0 100 100" class="w-full h-full">
+                <path d="M50 85 Q55 60 50 45" stroke="#15803d" stroke-width="3" fill="none"/>
+                <ellipse cx="50" cy="25" rx="10" ry="18" fill="#a855f7"/>
+                <ellipse cx="32" cy="38" rx="16" ry="10" fill="#c084fc" transform="rotate(-20 32 38)"/>
+                <ellipse cx="68" cy="38" rx="16" ry="10" fill="#c084fc" transform="rotate(20 68 38)"/>
+                <circle cx="50" cy="38" r="6" fill="#eab308"/>
+              </svg>`
+      },
+      {
+        id: 'tulipan',
+        name: 'Tulipán Blanco',
+        scientificName: 'Tulipa',
+        meaning: 'Perdón, paz interior y un nuevo comienzo sincero.',
+        description: 'Símbolo primaveral por excelencia, de líneas limpias y elegancia sobria.',
+        origin: 'Turquía / Países Bajos',
+        season: 'Primavera',
+        emotion: 'Paz',
+        careTip: 'Los tulipanes siguen creciendo en el jarrón; mantén el agua muy fría.',
+        category: 'Serenidad',
+        svg: `<svg viewBox="0 0 100 100" class="w-full h-full">
+                <path d="M50 85 L50 45" stroke="#22c55e" stroke-width="4"/>
+                <path d="M35 35 C35 60 65 60 65 35 C65 20 50 20 50 35 C50 20 35 20 35 35" fill="#f8fafc"/>
+              </svg>`
+      },
+      {
+        id: 'lavanda',
+        name: 'Lavanda',
+        scientificName: 'Lavandula angustifolia',
+        meaning: 'Calma, devoción, silencio curativo y serenidad.',
+        description: 'Famosa por su aroma relajante y sus espigas de tonos violáceos.',
+        origin: 'Cuenca del Mediterráneo',
+        season: 'Verano',
+        emotion: 'Tranquilidad',
+        careTip: 'Seca un ramo boca abajo para conservar su fragancia por meses.',
+        category: 'Bienestar',
+        svg: `<svg viewBox="0 0 100 100" class="w-full h-full">
+                <path d="M50 85 L50 25" stroke="#15803d" stroke-width="2"/>
+                <circle cx="50" cy="25" r="4" fill="#8b5cf6"/>
+                <circle cx="46" cy="32" r="5" fill="#a78bfa"/>
+                <circle cx="54" cy="32" r="5" fill="#a78bfa"/>
+                <circle cx="45" cy="40" r="5" fill="#8b5cf6"/>
+                <circle cx="55" cy="40" r="5" fill="#8b5cf6"/>
+              </svg>`
+      }
+    ];
+
+    // Estado global
+    let currentFlower = flowersDatabase[0];
+    let selectedTheme = 'rose';
+    let garden = JSON.parse(localStorage.getItem('florDiaria_garden') || '[]');
+
+    // Inicialización al cargar la ventana
+    window.onload = () => {
+      initDateDisplay();
+      initCanvas();
+      populateSelect();
+      pickDailyFlower();
+      renderCatalog();
+      renderGarden();
+    };
+
+    function initDateDisplay() {
+      const now = new Date();
+      const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+      document.getElementById('currentDateDisplay').innerText = now.toLocaleDateString('es-ES', options);
+    }
+
+    // Pestañas
+    function switchTab(tab) {
+      const tabs = ['daily', 'send', 'catalog', 'garden'];
+      tabs.forEach(t => {
+        const el = document.getElementById('tab' + t.charAt(0).toUpperCase() + t.slice(1));
+        const nav = document.getElementById('nav' + t.charAt(0).toUpperCase() + t.slice(1));
+        if (t === tab) {
+          el.classList.remove('hidden');
+          nav.className = "px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-300 flex items-center gap-2 bg-emerald-600 text-white shadow-md shadow-emerald-900/50";
+        } else {
+          el.classList.add('hidden');
+          nav.className = "px-4 py-2 rounded-xl text-xs font-semibold text-emerald-200/80 hover:text-white hover:bg-white/5 transition-all duration-300 flex items-center gap-2";
+        }
+      });
+    }
+
+    // Flor del día
+    function pickDailyFlower() {
+      const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
+      currentFlower = flowersDatabase[dayOfYear % flowersDatabase.length];
+      displayFlower(currentFlower);
+    }
+
+    function pickRandomFlower() {
+      const randomIdx = Math.floor(Math.random() * flowersDatabase.length);
+      currentFlower = flowersDatabase[randomIdx];
+      displayFlower(currentFlower);
+    }
+
+    function displayFlower(flower) {
+      document.getElementById('flowerName').innerText = flower.name;
+      document.getElementById('flowerScientificName').innerText = flower.scientificName;
+      document.getElementById('flowerMeaning').innerText = `"${flower.meaning}"`;
+      document.getElementById('flowerDescription').innerText = flower.description;
+      document.getElementById('flowerOrigin').innerText = flower.origin;
+      document.getElementById('flowerSeason').innerText = flower.season;
+      document.getElementById('flowerEmotion').innerText = flower.emotion;
+      document.getElementById('flowerCareTip').innerText = flower.careTip;
+      document.getElementById('flowerCategoryBadge').innerText = flower.category;
+      document.getElementById('flowerSvgDisplay').innerHTML = flower.svg;
+    }
+
+    // Preparar envío
+    function prepareCardWithFlower() {
+      document.getElementById('cardFlowerSelect').value = currentFlower.id;
+      switchTab('send');
+      updateCardPreview();
+    }
+
+    function populateSelect() {
+      const select = document.getElementById('cardFlowerSelect');
+      select.innerHTML = flowersDatabase.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
+    }
+
+    function setOccasionTemplate(type) {
+      const msgInput = document.getElementById('cardMessage');
+      if (type === 'amor') msgInput.value = "Encontré esta flor y pensé inmediatamente en ti. Gracias por llenar mi vida de color.";
+      if (type === 'amistad') msgInput.value = "Las buenas amistades son como las flores raras: hacen del mundo un lugar más hermoso.";
+      if (type === 'agradecimiento') msgInput.value = "Quería enviarte este detalle floral para agradecerte por tu apoyo y cariño incondicional.";
+      updateCardPreview();
+    }
+
+    function setCardTheme(theme) {
+      selectedTheme = theme;
+      const frame = document.getElementById('cardInnerFrame');
+      if (theme === 'rose') frame.style.borderColor = 'rgba(244, 63, 94, 0.4)';
+      if (theme === 'emerald') frame.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+      if (theme === 'amber') frame.style.borderColor = 'rgba(245, 158, 11, 0.4)';
+      if (theme === 'indigo') frame.style.borderColor = 'rgba(99, 102, 241, 0.4)';
+    }
+
+    function updateCardPreview() {
+      const recipient = document.getElementById('cardRecipient').value || "Alguien Especial";
+      const sender = document.getElementById('cardSender').value || "Tu Amigo";
+      const message = document.getElementById('cardMessage').value || "Que la belleza de esta flor alegre tu día y te recuerde lo especial que eres.";
+      const flowerId = document.getElementById('cardFlowerSelect').value;
+      const flower = flowersDatabase.find(f => f.id === flowerId) || currentFlower;
+
+      document.getElementById('previewRecipientText').innerText = `Para: ${recipient}`;
+      document.getElementById('previewSenderText').innerText = `Con cariño, ${sender}`;
+      document.getElementById('previewMessageText').innerText = `"${message}"`;
+      document.getElementById('previewFlowerSvg').innerHTML = flower.svg;
+      document.getElementById('previewFlowerSymbolism').innerText = `Flor: ${flower.name} - Significado: ${flower.meaning}`;
+    }
+
+    function shareViaWhatsApp() {
+      const recipient = document.getElementById('cardRecipient').value || "Alguien Especial";
+      const message = document.getElementById('cardMessage').value || "Una flor especial para ti.";
+      const text = `¡Hola ${recipient}! 🌸 Te he enviado un detalle especial desde FlorDiaria:\n\n"${message}"\n\nEntra para ver tu flor.`;
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+    }
+
+    function copyCardLink() {
+      navigator.clipboard.writeText(window.location.href);
+      alert("¡Enlace de la carta copiado al portapapeles!");
+    }
+
+    // Jardín Virtual
+    function addToGardenCurrent() {
+      if (!garden.includes(currentFlower.id)) {
+        garden.push(currentFlower.id);
+        localStorage.setItem('florDiaria_garden', JSON.stringify(garden));
+        renderGarden();
+        alert(`¡Has plantado una ${currentFlower.name} en tu jardín!`);
+      } else {
+        alert("Esta flor ya está plantada en tu jardín.");
+      }
+    }
+
+    function renderGarden() {
+      const grid = document.getElementById('gardenGrid');
+      if (garden.length === 0) {
+        grid.innerHTML = `<p class="col-span-full text-center text-xs text-slate-500 py-8">Tu jardín está vacío. Plantas flores desde la pantalla principal.</p>`;
+        return;
+      }
+      grid.innerHTML = garden.map(id => {
+        const flower = flowersDatabase.find(f => f.id === id);
+        return `<div class="glass-panel p-4 rounded-2xl flex flex-col items-center text-center space-y-2 border border-emerald-500/20">
+                  <div class="w-16 h-16">${flower.svg}</div>
+                  <span class="text-xs font-bold text-white">${flower.name}</span>
+                </div>`;
+      }).join('');
+    }
+
+    // Catálogo
+    function renderCatalog() {
+      const query = document.getElementById('catalogSearch')?.value.toLowerCase() || "";
+      const grid = document.getElementById('catalogGrid');
+      const filtered = flowersDatabase.filter(f => f.name.toLowerCase().includes(query) || f.emotion.toLowerCase().includes(query));
+
+      grid.innerHTML = filtered.map(f => `
+        <div class="glass-panel p-5 rounded-2xl border border-white/5 hover:border-emerald-500/30 transition-all flex flex-col justify-between space-y-4">
+          <div class="flex gap-4 items-center">
+            <div class="w-20 h-20 bg-slate-900/60 rounded-xl p-2 border border-white/5 flex-shrink-0">${f.svg}</div>
+            <div>
+              <h3 class="font-bold text-white text-base">${f.name}</h3>
+              <p class="text-[11px] text-emerald-400 italic">${f.scientificName}</p>
+              <span class="inline-block mt-1 bg-emerald-500/10 text-emerald-300 text-[10px] px-2 py-0.5 rounded-md border border-emerald-500/20">${f.emotion}</span>
+            </div>
+          </div>
+          <p class="text-xs text-slate-300 line-clamp-2">${f.meaning}</p>
+          <button onclick="displayFlower(flowersDatabase.find(x => x.id === '${f.id}')); switchTab('daily');" class="w-full py-2 bg-white/5 hover:bg-emerald-600 hover:text-white text-emerald-300 text-xs rounded-xl transition-all">Ver Detalle Completo</button>
+        </div>
+      `).join('');
+    }
+
+    // Canvas animación de pétalos flotantes
+    function initCanvas() {
+      const canvas = document.getElementById('petalsCanvas');
+      const ctx = canvas.getContext('2d');
+      let width = canvas.width = window.innerWidth;
+      let height = canvas.height = window.innerHeight;
+
+      window.addEventListener('resize', () => {
+        width = canvas.width = window.innerWidth;
+        height = canvas.height = window.innerHeight;
+      });
+
+      const petals = Array.from({ length: 25 }, () => ({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        r: Math.random() * 4 + 2,
+        dx: Math.random() * 1 - 0.5,
+        dy: Math.random() * 1 + 0.5,
+        opacity: Math.random() * 0.5 + 0.2
+      }));
+
+      function animate() {
+        ctx.clearRect(0, 0, width, height);
+        petals.forEach(p => {
+          p.x += p.dx;
+          p.y += p.dy;
+          if (p.y > height) p.y = -10;
+          if (p.x > width) p.x = 0;
+          if (p.x < 0) p.x = width;
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(251, 113, 133, ${p.opacity})`;
+          ctx.fill();
+        });
+        requestAnimationFrame(animate);
+      }
+      animate();
+    }
+
+    // Sonido Ambiental
+    let audioCtx = null;
+    let isPlayingAudio = false;
+
+    function toggleAmbientAudio() {
+      const icon = document.getElementById('audioStatusIcon');
+      if (!isPlayingAudio) {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.01, audioCtx.currentTime);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        isPlayingAudio = true;
+        icon.innerText = "🔊";
+      } else {
+        if (audioCtx) audioCtx.suspend();
+        isPlayingAudio = false;
+        icon.innerText = "🎵";
+      }
+    }
+  </script>
+</body>
+</html>
